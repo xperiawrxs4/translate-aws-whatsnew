@@ -3,11 +3,10 @@
 Lambda 関数で AWS の What’s New の英語版を取得して日本語に翻訳して Android アプリで表示する
 詳細画面のボタンからはオリジナル（英語）のページへ遷移します（デフォルトブラウザで開くはず）
 
-![aws-whatsnew-1](https://github.com/user-attachments/assets/ca5fbcaf-bcff-467a-bc09-ccf5509dd9db)
+![aws-whatsnew-1](https://github.com/user-attachments/assets/23baf1d6-f6f2-41d3-8c79-29f97632f952)
 
 ## アーキテクチャ図
-
-![アーキテクチャ図 drawio](https://github.com/user-attachments/assets/e031ae38-ea77-41bd-98f2-a58b5d24ed62)
+![アーキテクチャ図 drawio](https://github.com/user-attachments/assets/85bda7e7-afe5-4adf-b8ec-a969886313c3)
 
 ## Android アプリ側の設定
 

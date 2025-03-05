@@ -36,8 +36,10 @@ class NewsViewModel : ViewModel() {
                             dateFormat.parse(newsItem.pubdate)?.time
                         } catch (e: Exception) {
                             // 日付のパースに失敗した場合はログを出力
+                            // 日付のパースに失敗した場合はログを出力し、エラーメッセージをUIに送信
                             println("Failed to parse date: ${newsItem.pubdate}")
                             println("Error: ${e.message}")
+                            _uiState.value = UiState.Error("日付の解析に失敗しました: ${newsItem.pubdate}")
                             0L // パースに失敗した場合は最も古い日付として扱う
                         }
                     }

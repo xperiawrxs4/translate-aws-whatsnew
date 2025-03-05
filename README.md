@@ -10,9 +10,8 @@ Lambda 関数で AWS の What’s New の英語版を取得して日本語に翻
 
 ## Android アプリ側の設定
 
-- NewsRepository.kt
-  - @GET("your_api_endpoint")　：API のエンドポイントを指定してください
-  - .baseUrl("your_api_gateway_endpoint")　：API Gateway のエンドポイントを指定してください
+- NewsApiService.kt
+  - @GET("news")　：API のエンドポイントを指定してください　例でnewsを指定しています
 - NetworkModule.kt
   - .baseUrl("your_api_gateway_endpoint")　：API Gateway のエンドポイントを指定してください
 

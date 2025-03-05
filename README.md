@@ -4,6 +4,7 @@ Lambda 関数で AWS の What’s New の英語版を取得して日本語に翻
 詳細画面のボタンからはオリジナル（英語）のページへ遷移します（デフォルトブラウザで開くはず）
 
 ![aws-whatsnew-1](https://github.com/user-attachments/assets/23baf1d6-f6f2-41d3-8c79-29f97632f952)
+![aws-whatsnew-pulltorefresh](https://github.com/user-attachments/assets/088b76be-de24-4af4-b9f8-f6de01e1d4fe)
 
 ## アーキテクチャ図
 ![アーキテクチャ図 drawio](https://github.com/user-attachments/assets/85bda7e7-afe5-4adf-b8ec-a969886313c3)

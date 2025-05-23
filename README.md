@@ -28,3 +28,32 @@ Lambda 関数で AWS の What’s New の英語版を取得して日本語に翻
   - feedparser のレイヤーもしくは zip を追加してください
 - scan-dynamodb
   - Android アプリ側で API Gateway 経由で呼び出す DynamoDB のデータ取得用関数
+
+## Lambda 関数のユニットテスト
+
+プロジェクトには、Lambda 関数のためのユニットテストが含まれています。これらのテストは `pytest` を使用して実行できます。
+
+### テストのセットアップ
+
+1.  テストの依存関係をインストールします。リポジトリのルートディレクトリで次のコマンドを実行します（もしくは `lambda` ディレクトリで直接実行しても構いませんが、パスの調整が必要になる場合があります）。
+    ```bash
+    pip install -r lambda/requirements-dev.txt
+    ```
+
+### テストの実行
+
+1.  `lambda` ディレクトリに移動します。
+    ```bash
+    cd lambda
+    ```
+2.  `pytest` を実行します。
+    ```bash
+    pytest
+    ```
+    これにより、`get-whatsnew` および `scan-dynamodb` サブディレクトリ内の `test_*.py` ファイルが自動的に検出され、実行されます。
+
+    テスト実行時に `PYTHONPATH` の設定が必要な場合や、モジュールが見つからないエラーが出る場合は、`lambda` ディレクトリから次のように `PYTHONPATH` を設定して `pytest` を実行してみてください。
+    ```bash
+    PYTHONPATH=. pytest
+    ```
+    これにより、`lambda` ディレクトリ内のモジュール（`get-whatsnew` や `scan-dynamodb` の中の `lambda_function.py`）が正しくインポートされるようになります。

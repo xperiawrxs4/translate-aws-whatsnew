@@ -56,4 +56,4 @@ Lambda 関数で AWS の What’s New の英語版を取得して日本語に翻
     ```bash
     PYTHONPATH=. pytest
     ```
-    これにより、`lambda` ディレクトリ内のモジュール（`get-whatsnew` や `scan-dynamodb` の中の `lumbda_function.py` や `lambda_function.py`）が正しくインポートされるようになります。
+    これにより、`lambda` ディレクトリ内のモジュール（`get-whatsnew` や `scan-dynamodb` の中の `lambda_function.py`）が正しくインポートされるようになります。

@@ -11,18 +11,18 @@ import hashlib
 sys.path.append(os.path.join(os.path.dirname(__file__), '.'))
 
 # Import the functions to be tested
-# Assuming your lambda handler is in 'lumbda_function.py' as per the file listing
+# Assuming your lambda handler is in 'lambda_function.py' as per the file listing
 try:
-    import lumbda_function
+    import lambda_function
 except ImportError:
     # Fallback for local testing if the file name is slightly different or path issues
-    if os.path.exists(os.path.join(os.path.dirname(__file__), 'lumbda_function.py')):
-        from . import lumbda_function
+    if os.path.exists(os.path.join(os.path.dirname(__file__), 'lambda_function.py')):
+        from . import lambda_function
     else:
         raise
 
 class TestGetWhatsNewLambda(unittest.TestCase):
-    @mock.patch('lumbda_function.boto3.client')
+    @mock.patch('lambda_function.boto3.client')
     def test_translate_text_success(self, mock_boto_client):
         # Configure the mock Translate client and its method
         mock_translate = mock.Mock()
@@ -30,7 +30,7 @@ class TestGetWhatsNewLambda(unittest.TestCase):
         mock_boto_client.return_value = mock_translate
 
         # Call the function
-        result = lumbda_function.translate_text('Hello', 'en', 'ja')
+        result = lambda_function.translate_text('Hello', 'en', 'ja')
 
         # Assertions
         self.assertEqual(result, 'こんにちは')
@@ -39,10 +39,10 @@ class TestGetWhatsNewLambda(unittest.TestCase):
         )
 
     def test_translate_text_empty_input(self):
-        result = lumbda_function.translate_text('')
+        result = lambda_function.translate_text('')
         self.assertEqual(result, '')
 
-    @mock.patch('lumbda_function.boto3.client')
+    @mock.patch('lambda_function.boto3.client')
     def test_translate_text_api_failure(self, mock_boto_client):
         # Configure the mock to simulate an API error
         mock_translate = mock.Mock()
@@ -55,7 +55,7 @@ class TestGetWhatsNewLambda(unittest.TestCase):
 
         # Call the function
         original_text = "Hello, world"
-        result = lumbda_function.translate_text(original_text, 'en', 'ja')
+        result = lambda_function.translate_text(original_text, 'en', 'ja')
 
         # Assert that the original text is returned on failure
         self.assertEqual(result, original_text)
@@ -69,11 +69,11 @@ class TestGetWhatsNewLambda(unittest.TestCase):
     # We can mock them if necessary for other tests.
     # For now, these tests for translate_text should be fine.
 
-    @mock.patch('lumbda_function.feedparser.parse')
-    @mock.patch('lumbda_function.boto3.resource') # Mock the resource for initial table setup
-    @mock.patch('lumbda_function.table') # Directly mock the global table object used by the function
-    @mock.patch('lumbda_function.translate_text')
-    @mock.patch('lumbda_function.datetime') # Mock datetime to control 'now'
+    @mock.patch('lambda_function.feedparser.parse')
+    @mock.patch('lambda_function.boto3.resource') # Mock the resource for initial table setup
+    @mock.patch('lambda_function.table') # Directly mock the global table object used by the function
+    @mock.patch('lambda_function.translate_text')
+    @mock.patch('lambda_function.datetime') # Mock datetime to control 'now'
     def test_fetch_latest_rss(self, mock_datetime_module, mock_translate_text, mock_table_obj, mock_boto_resource, mock_feedparser_parse):
         # --- Setup Mocks ---
         # 1. Mock datetime to control 'now'
@@ -123,8 +123,8 @@ class TestGetWhatsNewLambda(unittest.TestCase):
             mock_feed_entry_new_not_exists
         ])
 
-        # 3. Mock DynamoDB table (using the mock_table_obj passed by @mock.patch('lumbda_function.table'))
-        #    The lumbda_function.table is already replaced by mock_table_obj by the decorator.
+        # 3. Mock DynamoDB table (using the mock_table_obj passed by @mock.patch('lambda_function.table'))
+        #    The lambda_function.table is already replaced by mock_table_obj by the decorator.
         def get_item_side_effect(Key):
             if Key['id'] == hashlib.sha256(mock_feed_entry_new_exists.link.encode()).hexdigest():
                 return {'Item': {'id': 'some_id'}} # Item exists
@@ -133,20 +133,20 @@ class TestGetWhatsNewLambda(unittest.TestCase):
         
         # We still need to mock boto3.resource('dynamodb').Table('AWS_News') in case it's called during import or elsewhere,
         # though our primary interaction is via the global 'table' object.
-        # The 'table' object in lumbda_function is initialized at module level.
-        # The @mock.patch('lumbda_function.table', mock_table_obj) handles this for the function's execution.
-        # mock_boto_resource.return_value.Table.return_value = mock_table_obj # This line might be redundant if 'lumbda_function.table' is consistently used.
+        # The 'table' object in lambda_function is initialized at module level.
+        # The @mock.patch('lambda_function.table', mock_table_obj) handles this for the function's execution.
+        # mock_boto_resource.return_value.Table.return_value = mock_table_obj # This line might be redundant if 'lambda_function.table' is consistently used.
 
 
         # 4. Mock translate_text
         mock_translate_text.side_effect = lambda text, src, dest: f"{text}_ja"
 
         # --- Call the function ---
-        lumbda_function.fetch_latest_rss()
+        lambda_function.fetch_latest_rss()
 
         # --- Assertions ---
         # Verify feedparser.parse call
-        mock_feedparser_parse.assert_called_once_with(lumbda_function.RSS_FEED_URL)
+        mock_feedparser_parse.assert_called_once_with(lambda_function.RSS_FEED_URL)
 
         # Verify DynamoDB get_item calls
         # Called for new_news_exists and new_news_not_exists
@@ -178,10 +178,10 @@ class TestGetWhatsNewLambda(unittest.TestCase):
         }
         mock_table_obj.put_item.assert_called_once_with(Item=expected_put_item_arg)
 
-    @mock.patch('lumbda_function.fetch_latest_rss')
+    @mock.patch('lambda_function.fetch_latest_rss')
     def test_lambda_handler(self, mock_fetch_latest_rss):
         # Call the handler
-        response = lumbda_function.lambda_handler({}, None) # event and context are not used by this handler
+        response = lambda_function.lambda_handler({}, None) # event and context are not used by this handler
 
         # Assertions
         mock_fetch_latest_rss.assert_called_once()

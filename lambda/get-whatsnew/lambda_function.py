@@ -24,26 +24,31 @@ def translate_text(text, source_lang="en", target_lang="ja"):
 
     try:
         response = translate.translate_text(
-            Text=text, SourceLanguageCode=source_lang, TargetLanguageCode=target_lang
+            Text=text, 
+            SourceLanguageCode=source_lang, 
+            TargetLanguageCode=target_lang
         )
         return response["TranslatedText"]
     except (BotoCoreError, ClientError) as e:
-        print(f"Translation Error: {e}")
+        import logging
+        logging.error(f"Translation Error: {e}")
         return text  # 翻訳に失敗しても元のテキストを返す
 
 
 def fetch_latest_rss():
     """RSS フィードを取得し、過去7日間のデータを処理"""
     feed = feedparser.parse(RSS_FEED_URL)
-    now = datetime.datetime.utcnow()
+    now = datetime.datetime.now(datetime.timezone.utc)
     seven_days_ago = now - datetime.timedelta(days=7)
 
     for entry in feed.entries:
+        # タイムゾーンをUTCに設定して日時を作成
         pub_date = datetime.datetime(
-            *entry.published_parsed[:6]
-        )  # pubDate を datetime に変換
+            *entry.published_parsed[:6],
+            tzinfo=datetime.timezone.utc
+        )
 
-        # **7日以上前のデータは無視**
+        # 7日以上前のデータは無視
         if pub_date < seven_days_ago:
             continue
 

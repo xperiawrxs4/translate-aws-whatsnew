@@ -5,6 +5,7 @@ import sys
 from botocore.exceptions import ClientError
 import datetime
 import hashlib
+from datetime import timezone
 
 # Add the lambda function's directory to the Python path
 # This allows us to import the lambda_function module
@@ -22,12 +23,10 @@ except ImportError:
         raise
 
 class TestGetWhatsNewLambda(unittest.TestCase):
-    @mock.patch('lambda_function.boto3.client')
-    def test_translate_text_success(self, mock_boto_client):
+    @mock.patch('lambda_function.translate')
+    def test_translate_text_success(self, mock_translate):
         # Configure the mock Translate client and its method
-        mock_translate = mock.Mock()
         mock_translate.translate_text.return_value = {'TranslatedText': 'こんにちは'}
-        mock_boto_client.return_value = mock_translate
 
         # Call the function
         result = lambda_function.translate_text('Hello', 'en', 'ja')
@@ -42,26 +41,26 @@ class TestGetWhatsNewLambda(unittest.TestCase):
         result = lambda_function.translate_text('')
         self.assertEqual(result, '')
 
-    @mock.patch('lambda_function.boto3.client')
-    def test_translate_text_api_failure(self, mock_boto_client):
+    @mock.patch('lambda_function.translate')
+    def test_translate_text_api_failure(self, mock_translate):
         # Configure the mock to simulate an API error
-        mock_translate = mock.Mock()
-        # Using botocore.exceptions.ClientError for a realistic exception
         mock_translate.translate_text.side_effect = ClientError(
             error_response={'Error': {'Code': 'SomeError', 'Message': 'Details'}},
             operation_name='TranslateText'
         )
-        mock_boto_client.return_value = mock_translate
-
-        # Call the function
+    
+        # Call the function with logging check
         original_text = "Hello, world"
-        result = lambda_function.translate_text(original_text, 'en', 'ja')
+        with self.assertLogs('root', level='ERROR') as cm:
+            result = lambda_function.translate_text(original_text, 'en', 'ja')
 
         # Assert that the original text is returned on failure
         self.assertEqual(result, original_text)
         mock_translate.translate_text.assert_called_once_with(
             Text=original_text, SourceLanguageCode='en', TargetLanguageCode='ja'
         )
+        # Verify error was logged
+        self.assertIn('ERROR:root:Translation Error:', cm.output[0])
 
     # It's good practice to ensure environment variables are set for tests
     # if the function directly relies on them, though translate_text itself doesn't
@@ -70,21 +69,41 @@ class TestGetWhatsNewLambda(unittest.TestCase):
     # For now, these tests for translate_text should be fine.
 
     @mock.patch('lambda_function.feedparser.parse')
-    @mock.patch('lambda_function.boto3.resource') # Mock the resource for initial table setup
-    @mock.patch('lambda_function.table') # Directly mock the global table object used by the function
+    @mock.patch('lambda_function.boto3.resource')
+    @mock.patch('lambda_function.table')
     @mock.patch('lambda_function.translate_text')
-    @mock.patch('lambda_function.datetime') # Mock datetime to control 'now'
-    def test_fetch_latest_rss(self, mock_datetime_module, mock_translate_text, mock_table_obj, mock_boto_resource, mock_feedparser_parse):
-        # --- Setup Mocks ---
-        # 1. Mock datetime to control 'now'
-        #    The lambda function uses datetime.datetime.utcnow() and datetime.timedelta()
-        #    and datetime.datetime() to parse entry.published_parsed
-        mock_now = datetime.datetime(2023, 10, 27, 0, 0, 0, tzinfo=datetime.timezone.utc)
-        mock_datetime_module.datetime.utcnow.return_value = mock_now
-        mock_datetime_module.timedelta.side_effect = lambda days: datetime.timedelta(days=days)
-        # This is crucial: when the code calls datetime.datetime(*entry.published_parsed[:6]),
-        # we want it to use the standard datetime constructor, not our mock_now.
-        mock_datetime_module.datetime.side_effect = lambda *args, **kwargs: datetime.datetime(*args, **kwargs) if args else mock_now
+    @mock.patch('lambda_function.datetime')
+    def test_fetch_latest_rss(self, mock_datetime, mock_translate_text, mock_table_obj, mock_boto_resource, mock_feedparser_parse):
+        # 固定の現在時刻を設定
+        fixed_now = datetime.datetime(2023, 10, 27, 0, 0, 0, tzinfo=timezone.utc)
+        seven_days_ago = fixed_now - datetime.timedelta(days=7)
+        
+        # datetime.now() の戻り値を固定
+        mock_datetime.now.return_value = fixed_now
+        # timedelta を実際の関数に置き換え
+        mock_datetime.timedelta = datetime.timedelta
+        # timezone.utc を実際の値に設定
+        mock_datetime.timezone.utc = timezone.utc
+        
+        # datetime クラスを実際のものに置き換え
+        class MockDateTime(datetime.datetime):
+            @classmethod
+            def now(cls, tz=None):
+                return fixed_now.astimezone(tz) if tz else fixed_now
+            
+            @classmethod
+            def utcnow(cls):
+                return fixed_now.replace(tzinfo=None)
+            
+            def __new__(cls, *args, **kwargs):
+                # 通常のdatetimeコンストラクタを呼び出す
+                if args or kwargs:
+                    if 'tzinfo' in kwargs and isinstance(kwargs['tzinfo'], mock.MagicMock):
+                        kwargs['tzinfo'] = timezone.utc
+                    return datetime.datetime.__new__(datetime.datetime, *args, **kwargs)
+                return fixed_now
+        
+        mock_datetime.datetime = MockDateTime
 
 
         # 2. Mock feedparser.parse
